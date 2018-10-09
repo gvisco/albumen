@@ -3,44 +3,53 @@
 import sys
 import urllib.request
 
+import pylast
+import configparser
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QWidget, QDesktopWidget, QApplication, QHBoxLayout, 
     QVBoxLayout, QPushButton, QLineEdit, QLabel, QInputDialog)
 from PyQt5.QtGui import QIcon, QImage, QPixmap
-
 
 class Albumen(QWidget):
     
     def __init__(self):
         super().__init__()
         self.initUI()
-        
-        
+        self.network = self.initLastFM()
+                
+    def initLastFM(self):
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        API_KEY = config['DEFAULT']['API_KEY']
+        network = pylast.LastFMNetwork(api_key=API_KEY)
+        return network
+
     def initUI(self):
         self.setLayout(self.initLayout()) 
-
-        self.resize(500, 500)
+        self.setFixedSize(500, 500)
         self.centerWindow()
-        self.setWindowTitle('Albumen')
         self.setWindowIcon(QIcon('icon.png'))
-
         self.show()
-
 
     def initLayout(self):
         mainbox = QVBoxLayout()
-        
-        url = 'https://lastfm-img2.akamaized.net/i/u/300x300/17ea9e6cf87d4c04a622b5bf7ba241be.png'
-        data = urllib.request.urlopen(url).read()
-        image = QImage()
-        image.loadFromData(data)
-        lbl = QLabel(self)
-        lbl.setScaledContents(True)
-        lbl.setPixmap(QPixmap(image))
-        mainbox.addWidget(lbl)
+        self.mainlabel = QLabel(self)
+        mainbox.addWidget(self.mainlabel)
         #mainbox.addStretch(1)
+        self.updateContent('-')
         return mainbox
 
+    def updateContent(self, artist, url=None):
+        image = QImage()
+        if url:
+            data = urllib.request.urlopen(url).read()
+            image.loadFromData(data)
+        else:
+            image.load('question-mark.png')
+        self.mainlabel.setScaledContents(True)
+        self.mainlabel.setPixmap(QPixmap(image))
+        self.setWindowTitle(artist)
 
     def centerWindow(self):
         qr = self.frameGeometry()
@@ -48,23 +57,28 @@ class Albumen(QWidget):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-
     def keyPressEvent(self, e):  
-        print(e.key())  
+        # print(e.key())  
         if e.key() == Qt.Key_Escape:
             self.closeApplication()
         elif e.key() == Qt.Key_Return:
-            self.search()
+            self.searchDialog()
 
-    def search(self):
-        text, ok = QInputDialog.getText(self, 'Input Dialog', 'Search top albums')
-        if ok:
-            print(str(text))
+    def searchDialog(self):
+        text, ok = QInputDialog.getText(self, 'Search', 'Search top album')
+        if ok: 
+            self.searchAlbums(text)
 
+    def searchAlbums(self, name):
+        artist = self.network.get_artist(name)
+        topalbum = artist.get_top_albums(1)[0]
+        # TODO: error handling
+        self.updateContent(name, topalbum.item.get_cover_image())
 
     def closeApplication(self):
         QApplication.instance().quit()
-        
+
+
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
