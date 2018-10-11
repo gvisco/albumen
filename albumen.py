@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sys
+import sys, os
 import urllib.request
 
 import pylast
@@ -39,7 +39,6 @@ class Albumen(QWidget):
         mainbox = QVBoxLayout()
         self.mainlabel = QLabel(self)
         mainbox.addWidget(self.mainlabel)
-        #mainbox.addStretch(1)
         self.updateContent()
         return mainbox
 
@@ -48,12 +47,15 @@ class Albumen(QWidget):
         if self.albums:
             album = self.albums[self.index].item
             url = album.get_cover_image()
-            data = urllib.request.urlopen(url).read()
-            image.loadFromData(data)
+            if url:
+                data = urllib.request.urlopen(url).read()
+                image.loadFromData(data)
+            else:
+                image.load(os.path.join('pics', 'noalbum.jpg'))
             title = '%s - #%i %s' % (self.artist, self.index + 1, album.get_title())
         else:
-            image.load('question-mark.png')
-            title = "-"
+            image.load(os.path.join('pics', 'noartist.jpg'))
+            title = self.artist
         self.mainlabel.setScaledContents(True)
         self.mainlabel.setPixmap(QPixmap(image))
         self.setWindowTitle(title)
@@ -64,8 +66,7 @@ class Albumen(QWidget):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-    def keyPressEvent(self, e):  
-        # print(e.key())  
+    def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
             self.closeApplication()
         elif e.key() == Qt.Key_Return:
@@ -93,13 +94,16 @@ class Albumen(QWidget):
     def searchAlbums(self, name, limit=5):
         result = self.network.get_artist(name)
         
-        self.artist = result.get_correction()
-        self.albums = result.get_top_albums(limit)
-        self.index = 0
+        try:
+            self.artist = result.get_correction()
+            self.albums = result.get_top_albums(limit)
+        except pylast.WSError:
+            self.artist = name
+            self.albums = []
         
+        self.index = 0
         topalbum = self.albums[self.index].item if self.albums else None
         self.updateContent()
-        # TODO: error handling
 
     def closeApplication(self):
         QApplication.instance().quit()
