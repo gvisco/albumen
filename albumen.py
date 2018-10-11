@@ -32,7 +32,7 @@ class Albumen(QWidget):
         self.setLayout(self.initLayout()) 
         self.setFixedSize(500, 500)
         self.centerWindow()
-        self.setWindowIcon(QIcon('icon.png'))
+        self.setWindowIcon(QIcon(os.path.join('pics', 'icon.png')))
         self.show()
 
     def initLayout(self):
@@ -45,17 +45,22 @@ class Albumen(QWidget):
     def updateContent(self):
         image = QImage()
         if self.albums:
-            album = self.albums[self.index].item
-            url = album.get_cover_image()
-            if url:
-                data = urllib.request.urlopen(url).read()
-                image.loadFromData(data)
-            else:
-                image.load(os.path.join('pics', 'noalbum.jpg'))
-            title = '%s - #%i %s' % (self.artist, self.index + 1, album.get_title())
+            try:
+                album = self.albums[self.index].item
+                url = album.get_cover_image()
+                if url:
+                    data = urllib.request.urlopen(url).read()
+                    image.loadFromData(data)
+                else:
+                    image.load(os.path.join('pics', 'noalbum.jpg'))
+                title = '%s - #%i %s' % (self.artist, self.index + 1, album.get_title())
+            except Exception:
+                image.load(os.path.join('pics', 'error.jpg'))
+                title = '%s - #%i - ERR' % (self.artist, self.index + 1)
         else:
             image.load(os.path.join('pics', 'noartist.jpg'))
             title = self.artist
+
         self.mainlabel.setScaledContents(True)
         self.mainlabel.setPixmap(QPixmap(image))
         self.setWindowTitle(title)
