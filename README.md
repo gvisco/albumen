@@ -13,7 +13,7 @@ python albumen.py
 ```
 Use the key bindings:
 * _Enter_: search an artist
-* _Left/Right_Arrows_: show previus/next album
+* _Left/Right_Arrows_: show previous/next album
 * _I_: open the album page on [Last.fm](https://www.last.fm) 
 * _Esc_: exit
 
