@@ -1,6 +1,6 @@
 # albumen
 
-A minimalistic application that shows the top played albums of an artist.
+A minimalist application that shows the top played albums of an artist.
 
 ![Albumen Window](resources/screenshot.png)
 
