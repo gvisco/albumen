@@ -2,7 +2,7 @@
 
 import sys, os
 import urllib.request
-
+import webbrowser
 import pylast
 import configparser
 
@@ -10,6 +10,16 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QWidget, QDesktopWidget, QApplication, QHBoxLayout, 
     QVBoxLayout, QPushButton, QLineEdit, QLabel, QInputDialog)
 from PyQt5.QtGui import QIcon, QImage, QPixmap
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+CONFIG_PATH = os.path.join(ROOT_DIR, 'config.ini')
+
+IMG_PATH = os.path.join(ROOT_DIR, 'pics')
+ICON_PATH = os.path.join(IMG_PATH, 'icon.png')
+NOARTIST_PATH = os.path.join(IMG_PATH, 'noartist.jpg')
+NOALBUM_PATH = os.path.join(IMG_PATH, 'noalbum.jpg')
+ERROR_PATH = os.path.join(IMG_PATH, 'error.jpg')
 
 class Albumen(QWidget):
     
@@ -23,7 +33,7 @@ class Albumen(QWidget):
 
     def initLastFM(self):
         config = configparser.ConfigParser()
-        config.read('config.ini')
+        config.read(CONFIG_PATH)
         API_KEY = config['DEFAULT']['API_KEY']
         network = pylast.LastFMNetwork(api_key=API_KEY)
         return network
@@ -32,8 +42,9 @@ class Albumen(QWidget):
         self.setLayout(self.initLayout()) 
         self.setFixedSize(500, 500)
         self.centerWindow()
-        self.setWindowIcon(QIcon(os.path.join('pics', 'icon.png')))
+        self.setWindowIcon(QIcon(ICON_PATH))
         self.show()
+        self.searchDialog()
 
     def initLayout(self):
         mainbox = QVBoxLayout()
@@ -52,13 +63,13 @@ class Albumen(QWidget):
                     data = urllib.request.urlopen(url).read()
                     image.loadFromData(data)
                 else:
-                    image.load(os.path.join('pics', 'noalbum.jpg'))
+                    image.load(NOALBUM_PATH)
                 title = '%s - #%i %s' % (self.artist, self.index + 1, album.get_title())
             except Exception:
-                image.load(os.path.join('pics', 'error.jpg'))
+                image.load(ERROR_PATH)
                 title = '%s - #%i - ERR' % (self.artist, self.index + 1)
         else:
-            image.load(os.path.join('pics', 'noartist.jpg'))
+            image.load(NOARTIST_PATH)
             title = self.artist
 
         self.mainlabel.setScaledContents(True)
@@ -80,6 +91,8 @@ class Albumen(QWidget):
             self.nextAlbum()
         elif e.key() == Qt.Key_Left:
             self.previousAlbum()
+        elif e.key() == Qt.Key_I:
+            self.albumInfo()
 
     def searchDialog(self):
         text, ok = QInputDialog.getText(self, 'Search', 'Search top album')
@@ -95,6 +108,11 @@ class Albumen(QWidget):
         if self.albums:
             self.index = (self.index - 1) % len(self.albums) 
             self.updateContent()
+
+    def albumInfo(self):
+        if self.albums:
+            album = self.albums[self.index].item
+            webbrowser.open(album.get_url())
 
     def searchAlbums(self, name, limit=5):
         result = self.network.get_artist(name)
