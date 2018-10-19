@@ -65,7 +65,8 @@ class Albumen(QWidget):
                 else:
                     image.load(NOALBUM_PATH)
                 title = '%s - #%i %s' % (self.artist, self.index + 1, album.get_title())
-            except Exception:
+            except Exception as e:
+                print("[ERR] Cannot get album: %r" % e)
                 image.load(ERROR_PATH)
                 title = '%s - #%i - ERR' % (self.artist, self.index + 1)
         else:
@@ -120,7 +121,8 @@ class Albumen(QWidget):
         try:
             self.artist = result.get_correction()
             self.albums = result.get_top_albums(limit)
-        except pylast.WSError:
+        except pylast.WSError as e:
+            print("[ERR] Cannot get artist: %r" % e)
             self.artist = name
             self.albums = []
         
